@@ -15,7 +15,6 @@ import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
-import org.bukkit.event.block.BlockBreakEvent;
 
 public class BreakPlayer {
 
@@ -62,7 +61,7 @@ public class BreakPlayer {
     private void breakBlock() {
         player.playSound(player, Sound.BLOCK_STONE_BREAK, 1, 1);
         currentBlockBeingBroken.setType(Material.STONE);
-        BlockBreakEvent event = new CustomHardnessBlockBreakEvent(currentBlockBeingBroken, player);
+        CustomHardnessBlockBreakEvent event = new CustomHardnessBlockBreakEvent(currentBlockBeingBroken, player);
         Bukkit.getPluginManager().callEvent(event);
         stopMining();
     }
