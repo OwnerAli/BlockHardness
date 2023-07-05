@@ -2,15 +2,19 @@ package me.ogali.blockhardness.events;
 
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
+import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.block.BlockBreakEvent;
 
-public class CustomHardnessBlockBreakEvent extends BlockBreakEvent {
+public class CustomHardnessBlockBreakEvent extends Event {
 
     private static final HandlerList handlers = new HandlerList();
 
+    private final Player player;
+    private final Block block;
+
     public CustomHardnessBlockBreakEvent(Block theBlock, Player player) {
-        super(theBlock, player);
+        this.player = player;
+        this.block = theBlock;
     }
 
     public HandlerList getHandlers() {
