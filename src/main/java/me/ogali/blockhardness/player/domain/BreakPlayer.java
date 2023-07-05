@@ -35,8 +35,6 @@ public class BreakPlayer {
     }
 
     public void startMining(Block block) {
-        CustomHardnessBlockBreakEvent event = new CustomHardnessBlockBreakEvent(currentBlockBeingBroken, player);
-        Bukkit.getPluginManager().callEvent(event);
         if (!block.equals(currentBlockBeingBroken)) {
             startMiningNewBlock(block);
             return;
@@ -63,6 +61,8 @@ public class BreakPlayer {
     private void breakBlock() {
         player.playSound(player, Sound.BLOCK_STONE_BREAK, 1, 1);
         currentBlockBeingBroken.setType(Material.STONE);
+        CustomHardnessBlockBreakEvent event = new CustomHardnessBlockBreakEvent(currentBlockBeingBroken, player);
+        Bukkit.getPluginManager().callEvent(event);
         stopMining();
     }
 
