@@ -27,4 +27,8 @@ public class BlockHardnessApi {
         return instance;
     }
 
+    public BreakPlayerRegistry getBreakPlayerRegistry() {
+        return breakPlayerRegistry;
+    }
+
 }
