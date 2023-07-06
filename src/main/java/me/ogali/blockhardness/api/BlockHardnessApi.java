@@ -9,7 +9,7 @@ import org.bukkit.entity.Player;
 
 public class BlockHardnessApi {
 
-    private static final BlockHardnessPlugin plugin = (BlockHardnessPlugin) Bukkit.getServer().getPluginManager().getPlugin("BlockHardness");
+    private static final BlockHardnessPlugin plugin = new BlockHardnessPlugin();
     private static final BlockHardnessApi instance = new BlockHardnessApi(new BreakPlayerRegistry());
     private final BreakPlayerRegistry breakPlayerRegistry;
 
