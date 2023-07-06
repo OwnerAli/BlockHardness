@@ -4,6 +4,7 @@ import me.ogali.blockhardness.api.BlockHardnessApi;
 import me.ogali.blockhardness.listeners.BlockDigPacketListener;
 import me.ogali.blockhardness.listeners.PlayerJoinListener;
 import me.ogali.blockhardness.player.BreakPlayerRegistry;
+import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public final class BlockHardnessPlugin extends JavaPlugin {
@@ -24,6 +25,10 @@ public final class BlockHardnessPlugin extends JavaPlugin {
 
     @Override
     public void onDisable() {
+    }
+
+    public void test() {
+        Bukkit.getConsoleSender().sendMessage("TEST");
     }
 
     public BreakPlayerRegistry getBreakPlayerRegistry() {
