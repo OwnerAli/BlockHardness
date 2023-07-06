@@ -6,6 +6,7 @@ import org.bukkit.entity.Player;
 
 public class BlockHardnessApi {
 
+    private final BlockHardnessApi instance = new BlockHardnessApi(new BreakPlayerRegistry());
     private final BreakPlayerRegistry breakPlayerRegistry;
 
     public BlockHardnessApi(BreakPlayerRegistry breakPlayerRegistry) {
