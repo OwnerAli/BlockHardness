@@ -24,9 +24,9 @@ public class BreakPlayer {
     private long lastDamageTime;
     private long timeBetweenEachIncrement;
 
-    public BreakPlayer(Player player) {
+    public BreakPlayer(Player player, BlockHardnessPlugin blockHardnessPlugin) {
         this.player = player;
-        playerStopMiningPacketListener();
+        playerStopMiningPacketListener(blockHardnessPlugin);
         calculateTimeBetweenEachIncrement();
     }
 
@@ -69,9 +69,9 @@ public class BreakPlayer {
         timeBetweenEachIncrement = 5 / 10;
     }
 
-    private void playerStopMiningPacketListener() {
+    private void playerStopMiningPacketListener(BlockHardnessPlugin blockHardnessPlugin) {
         ProtocolLibrary.getProtocolManager()
-                .addPacketListener(new PacketAdapter(BlockHardnessPlugin.getInstance(), ListenerPriority.NORMAL,
+                .addPacketListener(new PacketAdapter(blockHardnessPlugin, ListenerPriority.NORMAL,
                         PacketType.Play.Client.BLOCK_DIG) {
                     @Override
                     public void onPacketReceiving(PacketEvent event) {
