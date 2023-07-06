@@ -22,6 +22,10 @@ public final class BlockHardnessPlugin extends JavaPlugin {
     public void onDisable() {
     }
 
+    public BreakPlayerRegistry getBreakPlayerRegistry() {
+        return breakPlayerRegistry;
+    }
+
     public static BlockHardnessPlugin getInstance() {
         return instance;
     }
