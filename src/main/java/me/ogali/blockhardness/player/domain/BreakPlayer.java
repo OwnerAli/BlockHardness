@@ -15,6 +15,7 @@ import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.Plugin;
 
 public class BreakPlayer {
 
@@ -24,9 +25,9 @@ public class BreakPlayer {
     private long lastDamageTime;
     private long timeBetweenEachIncrement;
 
-    public BreakPlayer(Player player, BlockHardnessPlugin blockHardnessPlugin) {
+    public BreakPlayer(Player player, Plugin plugin) {
         this.player = player;
-        playerStopMiningPacketListener(blockHardnessPlugin);
+        playerStopMiningPacketListener(plugin);
         calculateTimeBetweenEachIncrement();
     }
 
@@ -69,9 +70,9 @@ public class BreakPlayer {
         timeBetweenEachIncrement = 5 / 10;
     }
 
-    private void playerStopMiningPacketListener(BlockHardnessPlugin blockHardnessPlugin) {
+    private void playerStopMiningPacketListener(Plugin plugin) {
         ProtocolLibrary.getProtocolManager()
-                .addPacketListener(new PacketAdapter(blockHardnessPlugin, ListenerPriority.NORMAL,
+                .addPacketListener(new PacketAdapter(plugin, ListenerPriority.NORMAL,
                         PacketType.Play.Client.BLOCK_DIG) {
                     @Override
                     public void onPacketReceiving(PacketEvent event) {
