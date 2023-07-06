@@ -6,7 +6,7 @@ import org.bukkit.entity.Player;
 
 public class BlockHardnessApi {
 
-    private final BlockHardnessApi instance = new BlockHardnessApi(new BreakPlayerRegistry());
+    private static final BlockHardnessApi instance = new BlockHardnessApi(new BreakPlayerRegistry());
     private final BreakPlayerRegistry breakPlayerRegistry;
 
     public BlockHardnessApi(BreakPlayerRegistry breakPlayerRegistry) {
@@ -21,6 +21,10 @@ public class BlockHardnessApi {
     public void stopMining(Player player, Block block) {
         breakPlayerRegistry.getBreakPlayer(player)
                 .ifPresent(breakPlayer -> breakPlayer.startMining(block));
+    }
+
+    public static BlockHardnessApi getInstance() {
+        return instance;
     }
 
 }
