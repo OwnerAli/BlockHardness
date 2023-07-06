@@ -18,7 +18,7 @@ public class PlayerJoinListener implements Listener {
 
     @EventHandler
     public void onJoin(PlayerJoinEvent event) {
-        main.breakPlayerRegistry.addBreakPlayer(new BreakPlayer(event.getPlayer()));
+        main.getBreakPlayerRegistry().addBreakPlayer(new BreakPlayer(event.getPlayer()));
         event.getPlayer().removePotionEffect(PotionEffectType.SLOW_DIGGING);
         event.getPlayer().addPotionEffect(new PotionEffect(PotionEffectType.SLOW_DIGGING, Integer.MAX_VALUE, -1, false,
                 false, false));
