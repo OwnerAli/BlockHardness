@@ -38,11 +38,8 @@
                             <goal>shade</goal>
                         </goals>
                         <configuration>
-                            <artifactSet>
-                                <includes>
-                                    <include>com.github.OwnerAli:BlockHardness</include>
-                                </includes>
-                            </artifactSet>
+                            <shadedArtifactAttached>true</shadedArtifactAttached>
+                            <shadedClassifierName>shaded</shadedClassifierName>
                             <createDependencyReducedPom>false</createDependencyReducedPom>
                         </configuration>
                     </execution>
