@@ -38,8 +38,12 @@
                             <goal>shade</goal>
                         </goals>
                         <configuration>
-                            <shadedArtifactAttached>true</shadedArtifactAttached>
-                            <shadedClassifierName>shaded</shadedClassifierName>
+                            <relocations>
+                                <relocation>
+                                    <pattern>me.ogali.blockhardness</pattern>
+                                    <shadedPattern>me.ogali.blockhardness.shaded.blockhardness</shadedPattern>
+                                </relocation>
+                            </relocations>
                             <createDependencyReducedPom>false</createDependencyReducedPom>
                         </configuration>
                     </execution>
