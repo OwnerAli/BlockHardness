@@ -25,6 +25,7 @@
                 <configuration>
                     <source>17</source>
                     <target>17</target>
+                    <compilerVersion>17</compilerVersion>
                 </configuration>
             </plugin>
             <plugin>
@@ -38,12 +39,6 @@
                             <goal>shade</goal>
                         </goals>
                         <configuration>
-                            <relocations>
-                                <relocation>
-                                    <pattern>me.ogali.blockhardness</pattern>
-                                    <shadedPattern>me.ogali.blockhardness.shaded.blockhardness</shadedPattern>
-                                </relocation>
-                            </relocations>
                             <createDependencyReducedPom>false</createDependencyReducedPom>
                         </configuration>
                     </execution>

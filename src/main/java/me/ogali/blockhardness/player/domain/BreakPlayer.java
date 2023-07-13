@@ -8,7 +8,6 @@ import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.wrappers.BlockPosition;
-import me.ogali.blockhardness.BlockHardnessPlugin;
 import me.ogali.blockhardness.events.CustomHardnessBlockBreakEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -28,16 +27,15 @@ public class BreakPlayer {
     public BreakPlayer(Player player, Plugin plugin) {
         this.player = player;
         playerStopMiningPacketListener(plugin);
-        calculateTimeBetweenEachIncrement();
     }
 
     public Player getPlayer() {
         return player;
     }
 
-    public void startMining(Block block) {
+    public void startMining(Block block, long secondsBlockShouldTakeToBreak) {
         if (!block.equals(currentBlockBeingBroken)) {
-            startMiningNewBlock(block);
+            startMiningNewBlock(block, secondsBlockShouldTakeToBreak);
             return;
         }
         if (!((System.currentTimeMillis() - lastDamageTime) / 1000f >= timeBetweenEachIncrement)) return;
@@ -46,7 +44,8 @@ public class BreakPlayer {
         sendBreakAnimation(currentBlockStage++);
     }
 
-    private void startMiningNewBlock(Block block) {
+    private void startMiningNewBlock(Block block, long secondsBlockShouldTakeToBreak) {
+        calculateTimeBetweenEachIncrement(secondsBlockShouldTakeToBreak);
         currentBlockStage = 0;
         currentBlockBeingBroken = block;
         lastDamageTime = System.currentTimeMillis();
@@ -61,13 +60,13 @@ public class BreakPlayer {
 
     private void breakBlock() {
         player.playSound(player, Sound.BLOCK_STONE_BREAK, 1, 1);
-        currentBlockBeingBroken.setType(Material.STONE);
         Bukkit.getPluginManager().callEvent(new CustomHardnessBlockBreakEvent(currentBlockBeingBroken, player));
+        currentBlockBeingBroken.setType(Material.STONE);
         stopMining();
     }
 
-    private void calculateTimeBetweenEachIncrement() {
-        timeBetweenEachIncrement = 5 / 10;
+    private void calculateTimeBetweenEachIncrement(long secondsBlockShouldTakeToBreak) {
+        timeBetweenEachIncrement = secondsBlockShouldTakeToBreak / 10;
     }
 
     private void playerStopMiningPacketListener(Plugin plugin) {
