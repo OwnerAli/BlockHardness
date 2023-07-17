@@ -10,6 +10,7 @@ import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.wrappers.BlockPosition;
 import me.ogali.blockhardness.events.CustomHardnessBlockBreakEvent;
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
@@ -36,7 +37,7 @@ public class BreakPlayer {
             startMiningNewBlock(block, secondsBlockShouldTakeToBreak);
             return;
         }
-        if (!((System.currentTimeMillis() - lastDamageTime) / 1000f >= timeBetweenEachIncrement)) return;
+        if (!((System.currentTimeMillis() - lastDamageTime) / 1000f > timeBetweenEachIncrement)) return;
         if (currentBlockStage + 1 == 11) breakBlock();
         lastDamageTime = System.currentTimeMillis();
         sendBreakAnimation(currentBlockStage++);
@@ -50,15 +51,21 @@ public class BreakPlayer {
         sendBreakAnimation(currentBlockStage++);
     }
 
-    public void stopMining() {
+    private void stopMiningAndResetAnimation() {
         resetBreakAnimation();
+        stopMining();
+    }
+
+    private void stopMining() {
         currentBlockStage = 0;
         currentBlockBeingBroken = null;
     }
 
     private void breakBlock() {
-        player.playSound(player, currentBlockBeingBroken.getBlockData().getSoundGroup().getBreakSound(), 1, 1);
+        resetBreakAnimation();
         Bukkit.getPluginManager().callEvent(new CustomHardnessBlockBreakEvent(currentBlockBeingBroken, player));
+        player.playSound(player, currentBlockBeingBroken.getBlockData().getSoundGroup().getBreakSound(), 1, 1);
+        currentBlockBeingBroken.setType(Material.STONE);
         stopMining();
     }
 
@@ -78,7 +85,7 @@ public class BreakPlayer {
                         String value = packet.getModifier().readSafely(2).toString();
 
                         if (!value.equalsIgnoreCase("ABORT_DESTROY_BLOCK")) return;
-                        stopMining();
+                        stopMiningAndResetAnimation();
                     }
                 });
     }
