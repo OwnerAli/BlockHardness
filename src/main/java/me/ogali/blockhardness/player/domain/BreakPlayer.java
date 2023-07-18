@@ -10,7 +10,6 @@ import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.wrappers.BlockPosition;
 import me.ogali.blockhardness.events.CustomHardnessBlockBreakEvent;
 import org.bukkit.Bukkit;
-import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
@@ -37,8 +36,18 @@ public class BreakPlayer {
             startMiningNewBlock(block, secondsBlockShouldTakeToBreak);
             return;
         }
-        if (!((System.currentTimeMillis() - lastDamageTime) / 1000f > timeBetweenEachIncrement)) return;
-        if (currentBlockStage + 1 == 11) breakBlock();
+
+        long currentTime = System.currentTimeMillis();
+        long timeSinceLastDamage = currentTime - lastDamageTime;
+
+        if (timeSinceLastDamage < timeBetweenEachIncrement) return;
+
+        lastDamageTime = currentTime;
+        if (currentBlockStage + 1 == 11) {
+            breakBlock();
+            return;
+        }
+
         lastDamageTime = System.currentTimeMillis();
         sendBreakAnimation(currentBlockStage++);
     }
@@ -65,12 +74,11 @@ public class BreakPlayer {
         resetBreakAnimation();
         Bukkit.getPluginManager().callEvent(new CustomHardnessBlockBreakEvent(currentBlockBeingBroken, player));
         player.playSound(player, currentBlockBeingBroken.getBlockData().getSoundGroup().getBreakSound(), 1, 1);
-        currentBlockBeingBroken.setType(Material.STONE);
         stopMining();
     }
 
     private void calculateTimeBetweenEachIncrement(long secondsBlockShouldTakeToBreak) {
-        timeBetweenEachIncrement = secondsBlockShouldTakeToBreak / 10;
+        timeBetweenEachIncrement = secondsBlockShouldTakeToBreak * 1000 / 10;
     }
 
     private void playerStopMiningPacketListener(Plugin plugin) {
@@ -79,6 +87,7 @@ public class BreakPlayer {
                         PacketType.Play.Client.BLOCK_DIG) {
                     @Override
                     public void onPacketReceiving(PacketEvent event) {
+                        if (!event.getPlayer().equals(player)) return;
                         if (currentBlockBeingBroken == null) return;
 
                         PacketContainer packet = event.getPacket();
