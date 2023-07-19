@@ -20,7 +20,7 @@ public class BreakPlayer {
     private Block currentBlockBeingBroken;
     private int currentBlockStage;
     private long lastDamageTime;
-    private long timeBetweenEachIncrement;
+    private double timeBetweenEachIncrement;
 
     public BreakPlayer(Player player, Plugin plugin) {
         this.player = player;
@@ -31,7 +31,7 @@ public class BreakPlayer {
         return player;
     }
 
-    public void startMining(Block block, long secondsBlockShouldTakeToBreak) {
+    public void startMining(Block block, double secondsBlockShouldTakeToBreak) {
         if (!block.equals(currentBlockBeingBroken)) {
             startMiningNewBlock(block, secondsBlockShouldTakeToBreak);
             return;
@@ -52,7 +52,7 @@ public class BreakPlayer {
         sendBreakAnimation(currentBlockStage++);
     }
 
-    private void startMiningNewBlock(Block block, long secondsBlockShouldTakeToBreak) {
+    private void startMiningNewBlock(Block block, double secondsBlockShouldTakeToBreak) {
         calculateTimeBetweenEachIncrement(secondsBlockShouldTakeToBreak);
         currentBlockStage = 0;
         currentBlockBeingBroken = block;
@@ -77,7 +77,7 @@ public class BreakPlayer {
         stopMining();
     }
 
-    private void calculateTimeBetweenEachIncrement(long secondsBlockShouldTakeToBreak) {
+    private void calculateTimeBetweenEachIncrement(double secondsBlockShouldTakeToBreak) {
         timeBetweenEachIncrement = secondsBlockShouldTakeToBreak * 1000 / 10;
     }
 
