@@ -3,16 +3,12 @@ package me.ogali.blockhardness.player.domain;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.ProtocolManager;
-import com.comphenix.protocol.events.ListenerPriority;
-import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.wrappers.BlockPosition;
 import me.ogali.blockhardness.events.CustomHardnessBlockBreakEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
-import org.bukkit.plugin.Plugin;
 
 public class BreakPlayer {
 
@@ -22,13 +18,16 @@ public class BreakPlayer {
     private long lastDamageTime;
     private double timeBetweenEachIncrement;
 
-    public BreakPlayer(Player player, Plugin plugin) {
+    public BreakPlayer(Player player) {
         this.player = player;
-        playerStopMiningPacketListener(plugin);
     }
 
     public Player getPlayer() {
         return player;
+    }
+
+    public Block getCurrentBlockBeingBroken() {
+        return currentBlockBeingBroken;
     }
 
     public void startMining(Block block, double secondsBlockShouldTakeToBreak) {
@@ -49,7 +48,16 @@ public class BreakPlayer {
         }
 
         lastDamageTime = System.currentTimeMillis();
+        if (secondsBlockShouldTakeToBreak == 0.1) {
+            breakBlock();
+            return;
+        }
         sendBreakAnimation(currentBlockStage++);
+    }
+
+    public void stopMiningAndResetAnimation() {
+        resetBreakAnimation();
+        stopMining();
     }
 
     private void startMiningNewBlock(Block block, double secondsBlockShouldTakeToBreak) {
@@ -58,11 +66,6 @@ public class BreakPlayer {
         currentBlockBeingBroken = block;
         lastDamageTime = System.currentTimeMillis();
         sendBreakAnimation(currentBlockStage++);
-    }
-
-    private void stopMiningAndResetAnimation() {
-        resetBreakAnimation();
-        stopMining();
     }
 
     private void stopMining() {
@@ -79,24 +82,6 @@ public class BreakPlayer {
 
     private void calculateTimeBetweenEachIncrement(double secondsBlockShouldTakeToBreak) {
         timeBetweenEachIncrement = secondsBlockShouldTakeToBreak * 1000 / 10;
-    }
-
-    private void playerStopMiningPacketListener(Plugin plugin) {
-        ProtocolLibrary.getProtocolManager()
-                .addPacketListener(new PacketAdapter(plugin, ListenerPriority.NORMAL,
-                        PacketType.Play.Client.BLOCK_DIG) {
-                    @Override
-                    public void onPacketReceiving(PacketEvent event) {
-                        if (!event.getPlayer().equals(player)) return;
-                        if (currentBlockBeingBroken == null) return;
-
-                        PacketContainer packet = event.getPacket();
-                        String value = packet.getModifier().readSafely(2).toString();
-
-                        if (!value.equalsIgnoreCase("ABORT_DESTROY_BLOCK")) return;
-                        stopMiningAndResetAnimation();
-                    }
-                });
     }
 
     private void sendBreakAnimation(int stage) {

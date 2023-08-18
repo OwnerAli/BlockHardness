@@ -16,7 +16,7 @@ public class PlayerJoinListener implements Listener {
 
     @EventHandler
     public void onJoin(PlayerJoinEvent event) {
-        main.getBreakPlayerRegistry().addBreakPlayer(new BreakPlayer(event.getPlayer(), main));
+        main.getBreakPlayerRegistry().addBreakPlayer(new BreakPlayer(event.getPlayer()));
     }
 
 }
