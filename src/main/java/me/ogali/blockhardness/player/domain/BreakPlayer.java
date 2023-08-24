@@ -9,6 +9,7 @@ import me.ogali.blockhardness.events.CustomHardnessBlockBreakEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 
 public class BreakPlayer {
 
@@ -30,7 +31,7 @@ public class BreakPlayer {
         return currentBlockBeingBroken;
     }
 
-    public void startMining(Block block, double secondsBlockShouldTakeToBreak) {
+    public void startMining(Block block, double secondsBlockShouldTakeToBreak, boolean dropVanillaBlock) {
         if (!block.equals(currentBlockBeingBroken)) {
             startMiningNewBlock(block, secondsBlockShouldTakeToBreak);
             return;
@@ -43,13 +44,13 @@ public class BreakPlayer {
 
         lastDamageTime = currentTime;
         if (currentBlockStage + 1 == 11) {
-            breakBlock();
+            breakBlock(dropVanillaBlock);
             return;
         }
 
         lastDamageTime = System.currentTimeMillis();
         if (secondsBlockShouldTakeToBreak == 0.1) {
-            breakBlock();
+            breakBlock(dropVanillaBlock);
             return;
         }
         sendBreakAnimation(currentBlockStage++);
@@ -73,10 +74,15 @@ public class BreakPlayer {
         currentBlockBeingBroken = null;
     }
 
-    private void breakBlock() {
+    private void breakBlock(boolean dropVanillaBlock) {
         resetBreakAnimation();
         Bukkit.getPluginManager().callEvent(new CustomHardnessBlockBreakEvent(currentBlockBeingBroken, player));
         player.playSound(player, currentBlockBeingBroken.getBlockData().getSoundGroup().getBreakSound(), 1, 1);
+
+        if (dropVanillaBlock) {
+            player.getWorld().dropItemNaturally(currentBlockBeingBroken.getLocation(), new ItemStack(currentBlockBeingBroken.getType()));
+        }
+
         stopMining();
     }
 
