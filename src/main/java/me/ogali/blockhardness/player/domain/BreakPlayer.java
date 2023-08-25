@@ -7,9 +7,9 @@ import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.wrappers.BlockPosition;
 import me.ogali.blockhardness.events.CustomHardnessBlockBreakEvent;
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
 
 public class BreakPlayer {
 
@@ -78,9 +78,10 @@ public class BreakPlayer {
         resetBreakAnimation();
         Bukkit.getPluginManager().callEvent(new CustomHardnessBlockBreakEvent(currentBlockBeingBroken, player));
         player.playSound(player, currentBlockBeingBroken.getBlockData().getSoundGroup().getBreakSound(), 1, 1);
+        currentBlockBeingBroken.setType(Material.AIR);
 
         if (dropVanillaBlock) {
-            player.getWorld().dropItemNaturally(currentBlockBeingBroken.getLocation(), new ItemStack(currentBlockBeingBroken.getType()));
+            currentBlockBeingBroken.breakNaturally(player.getItemInUse());
         }
 
         stopMining();
