@@ -80,10 +80,10 @@ public class BreakPlayer {
         CustomHardnessBlockBreakEvent event = new CustomHardnessBlockBreakEvent(currentBlockBeingBroken, player);
         Bukkit.getPluginManager().callEvent(event);
 
-        if (!event.isCancelled()) {
-            Bukkit.getConsoleSender().sendMessage("CANCELLED");
-            return;
-        }
+        Bukkit.getConsoleSender().sendMessage("BEFORE: " + event.isCancelled());
+        if (event.isCancelled()) return;
+        Bukkit.getConsoleSender().sendMessage("AFTER: " + event.isCancelled());
+
         player.playSound(player, currentBlockBeingBroken.getBlockData().getSoundGroup().getBreakSound(), 1, 1);
         currentBlockBeingBroken.setType(Material.AIR);
 
