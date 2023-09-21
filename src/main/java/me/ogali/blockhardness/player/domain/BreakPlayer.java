@@ -7,6 +7,7 @@ import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.wrappers.BlockPosition;
 import me.ogali.blockhardness.events.CustomHardnessBlockBreakEvent;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
@@ -80,7 +81,10 @@ public class BreakPlayer {
         CustomHardnessBlockBreakEvent event = new CustomHardnessBlockBreakEvent(currentBlockBeingBroken, player);
         Bukkit.getPluginManager().callEvent(event);
 
-        if (event.isCancelled()) return;
+        if (event.isCancelled()) {
+            Bukkit.getConsoleSender().sendMessage("CANCELLED");
+            return;
+        }
         player.playSound(player, currentBlockBeingBroken.getBlockData().getSoundGroup().getBreakSound(), 1, 1);
         currentBlockBeingBroken.setType(Material.AIR);
 
