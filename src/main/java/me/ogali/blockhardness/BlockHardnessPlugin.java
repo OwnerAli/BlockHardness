@@ -6,12 +6,15 @@ import com.comphenix.protocol.events.ListenerPriority;
 import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
+import lombok.Getter;
+import me.ogali.blockhardness.listeners.CustomHardnessBlockBreakListener;
 import me.ogali.blockhardness.listeners.PlayerJoinListener;
 import me.ogali.blockhardness.listeners.PlayerSwingListener;
 import me.ogali.blockhardness.player.BreakPlayerRegistry;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
+@Getter
 public final class BlockHardnessPlugin extends JavaPlugin {
 
     public static BlockHardnessPlugin instance;
@@ -24,16 +27,9 @@ public final class BlockHardnessPlugin extends JavaPlugin {
         registerListeners();
     }
 
-    @Override
-    public void onDisable() {
-    }
-
-    public BreakPlayerRegistry getBreakPlayerRegistry() {
-        return breakPlayerRegistry;
-    }
-
     private void registerListeners() {
         PluginManager pluginManager = getServer().getPluginManager();
+        pluginManager.registerEvents(new CustomHardnessBlockBreakListener(breakPlayerRegistry), this);
         pluginManager.registerEvents(new PlayerJoinListener(this), this);
         pluginManager.registerEvents(new PlayerSwingListener(), this);
         registryBreakResetPacketListener();
@@ -48,13 +44,12 @@ public final class BlockHardnessPlugin extends JavaPlugin {
                         breakPlayerRegistry.getBreakPlayer(event.getPlayer())
                                 .ifPresent(breakPlayer -> {
                                     if (!event.getPlayer().equals(breakPlayer.getPlayer())) return;
-                                    if (breakPlayer.getCurrentBlockBeingBroken() == null) return;
+                                    if (breakPlayer.getBlocksBeingMinedList().isEmpty()) return;
 
                                     PacketContainer packet = event.getPacket();
                                     String value = packet.getModifier().readSafely(2).toString();
 
                                     if (!value.equalsIgnoreCase("ABORT_DESTROY_BLOCK")) return;
-                                    breakPlayer.stopMiningAndResetAnimation();
                                 });
                     }
                 });

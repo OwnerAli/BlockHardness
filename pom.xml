@@ -81,5 +81,12 @@
             <version>5.0.0</version>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>me.ogali.xenith</groupId>
+            <artifactId>xenith</artifactId>
+            <version>0.0.1</version>
+            <scope>system</scope>
+            <systemPath>${basedir}/libs/Xenith-0.0.1.jar</systemPath>
+        </dependency>
     </dependencies>
 </project>
