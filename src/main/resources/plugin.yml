@@ -2,3 +2,4 @@ name: BlockHardness
 version: '${project.version}'
 main: me.ogali.blockhardness.BlockHardnessPlugin
 api-version: 1.18
+depend: [ProtocolLib]
