@@ -1,0 +1,17 @@
+# How fast each tool mines a custom-hardness block, relative to a bare hand.
+# Matched against the start of the item's name, so tools from other plugins can be given a speed.
+# Anything unmatched (and the wrong tool for a block) stays at 1.0.
+Tool-Speeds:
+  WOODEN_: 2.0
+  STONE_: 4.0
+  COPPER_: 5.0
+  IRON_: 6.0
+  DIAMOND_: 8.0
+  NETHERITE_: 9.0
+  GOLDEN_: 12.0
+
+Mining:
+  # Used when a caller passes MiningOptions.defaults() instead of saying either way.
+  apply-tool-speed-by-default: false
+  # Times never go below this; BreakPlayer treats it as an instant break.
+  minimum-break-seconds: 0.1

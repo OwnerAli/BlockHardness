@@ -24,6 +24,13 @@ dependencies {
     compileOnly("org.spigotmc:spigot-api:1.20.1-R0.1-SNAPSHOT")
     compileOnly("com.comphenix.protocol:ProtocolLib:5.3.0")
 
+    testImplementation("org.spigotmc:spigot-api:1.20.1-R0.1-SNAPSHOT")
+    testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+}
+
+tasks.test {
+    useJUnitPlatform()
 }
 
 tasks.withType<JavaCompile>().configureEach {

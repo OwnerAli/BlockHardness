@@ -6,6 +6,7 @@ import com.comphenix.protocol.events.ListenerPriority;
 import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
+import me.ogali.blockhardness.config.BlockHardnessConfig;
 import me.ogali.blockhardness.listeners.PlayerJoinListener;
 import me.ogali.blockhardness.listeners.PlayerSwingListener;
 import me.ogali.blockhardness.player.BreakPlayerRegistry;
@@ -16,10 +17,12 @@ public final class BlockHardnessPlugin extends JavaPlugin {
 
     public static BlockHardnessPlugin instance;
     private BreakPlayerRegistry breakPlayerRegistry;
+    private BlockHardnessConfig blockHardnessConfig;
 
     @Override
     public void onEnable() {
         instance = this;
+        blockHardnessConfig = new BlockHardnessConfig(this);
         breakPlayerRegistry = new BreakPlayerRegistry();
         registerListeners();
     }
@@ -30,6 +33,10 @@ public final class BlockHardnessPlugin extends JavaPlugin {
 
     public BreakPlayerRegistry getBreakPlayerRegistry() {
         return breakPlayerRegistry;
+    }
+
+    public BlockHardnessConfig getBlockHardnessConfig() {
+        return blockHardnessConfig;
     }
 
     private void registerListeners() {
@@ -59,5 +66,4 @@ public final class BlockHardnessPlugin extends JavaPlugin {
                     }
                 });
     }
-
 }

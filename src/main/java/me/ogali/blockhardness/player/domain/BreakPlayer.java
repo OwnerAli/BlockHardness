@@ -5,7 +5,11 @@ import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.ProtocolManager;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.wrappers.BlockPosition;
+import me.ogali.blockhardness.BlockHardnessPlugin;
+import me.ogali.blockhardness.config.BlockHardnessConfig;
 import me.ogali.blockhardness.events.CustomHardnessBlockBreakEvent;
+import me.ogali.blockhardness.mining.MiningOptions;
+import me.ogali.blockhardness.speed.ToolSpeed;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -31,9 +35,23 @@ public class BreakPlayer {
         return currentBlockBeingBroken;
     }
 
+    /**
+     * Kept for callers written against the old signature: no tool speed, just a fixed time.
+     */
     public void startMining(Block block, double secondsBlockShouldTakeToBreak, boolean dropVanillaBlock) {
+        startMining(block, secondsBlockShouldTakeToBreak, new MiningOptions(false, dropVanillaBlock));
+    }
+
+    /**
+     * @param secondsBlockShouldTakeToBreak base break time, before any tool speed the options ask for
+     * @param options                       whether tool speed applies and whether vanilla drops are dropped
+     */
+    public void startMining(Block block, double secondsBlockShouldTakeToBreak, MiningOptions options) {
+        double secondsToBreak = applyToolSpeed(block, secondsBlockShouldTakeToBreak, options);
+        boolean dropVanillaBlock = options.dropVanillaBlock();
+
         if (!block.equals(currentBlockBeingBroken)) {
-            startMiningNewBlock(block, secondsBlockShouldTakeToBreak);
+            startMiningNewBlock(block, secondsToBreak);
             return;
         }
 
@@ -49,7 +67,7 @@ public class BreakPlayer {
         }
 
         lastDamageTime = System.currentTimeMillis();
-        if (secondsBlockShouldTakeToBreak == 0.1) {
+        if (secondsToBreak <= minimumBreakSeconds()) {
             breakBlock(dropVanillaBlock);
             return;
         }
@@ -85,6 +103,21 @@ public class BreakPlayer {
         }
 
         stopMining();
+    }
+
+    private double applyToolSpeed(Block block, double secondsBlockShouldTakeToBreak, MiningOptions options) {
+        if (!options.applyToolSpeed()) return secondsBlockShouldTakeToBreak;
+
+        double multiplier = ToolSpeed.multiplierFor(player, block.getType());
+        return Math.max(minimumBreakSeconds(), secondsBlockShouldTakeToBreak / multiplier);
+    }
+
+    private double minimumBreakSeconds() {
+        BlockHardnessPlugin plugin = BlockHardnessPlugin.instance;
+        if (plugin == null || plugin.getBlockHardnessConfig() == null) {
+            return BlockHardnessConfig.DEFAULT_MINIMUM_BREAK_SECONDS;
+        }
+        return plugin.getBlockHardnessConfig().getMinimumBreakSeconds();
     }
 
     private void calculateTimeBetweenEachIncrement(double secondsBlockShouldTakeToBreak) {
