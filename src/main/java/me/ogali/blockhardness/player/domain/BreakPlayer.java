@@ -5,7 +5,6 @@ import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.ProtocolManager;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.wrappers.BlockPosition;
-import me.ogali.blockhardness.BlockHardnessPlugin;
 import me.ogali.blockhardness.config.BlockHardnessConfig;
 import me.ogali.blockhardness.events.CustomHardnessBlockBreakEvent;
 import me.ogali.blockhardness.mining.MiningOptions;
@@ -44,11 +43,13 @@ public class BreakPlayer {
 
     /**
      * @param secondsBlockShouldTakeToBreak base break time, before any tool speed the options ask for
-     * @param options                       whether tool speed applies and whether vanilla drops are dropped
+     * @param options                       which speed sources apply and whether vanilla drops are dropped;
+     *                                      null falls back to {@link MiningOptions#defaults()}
      */
     public void startMining(Block block, double secondsBlockShouldTakeToBreak, MiningOptions options) {
-        double secondsToBreak = applyToolSpeed(block, secondsBlockShouldTakeToBreak, options);
-        boolean dropVanillaBlock = options.dropVanillaBlock();
+        MiningOptions miningOptions = options == null ? MiningOptions.defaults() : options;
+        double secondsToBreak = applyToolSpeed(block, secondsBlockShouldTakeToBreak, miningOptions);
+        boolean dropVanillaBlock = miningOptions.dropVanillaBlock();
 
         if (!block.equals(currentBlockBeingBroken)) {
             startMiningNewBlock(block, secondsToBreak);
@@ -106,18 +107,14 @@ public class BreakPlayer {
     }
 
     private double applyToolSpeed(Block block, double secondsBlockShouldTakeToBreak, MiningOptions options) {
-        if (!options.applyToolSpeed()) return secondsBlockShouldTakeToBreak;
+        if (!options.appliesToolSpeed()) return secondsBlockShouldTakeToBreak;
 
-        double multiplier = ToolSpeed.multiplierFor(player, block.getType());
+        double multiplier = ToolSpeed.multiplierFor(player, block.getType(), options.speedOptions());
         return Math.max(minimumBreakSeconds(), secondsBlockShouldTakeToBreak / multiplier);
     }
 
     private double minimumBreakSeconds() {
-        BlockHardnessPlugin plugin = BlockHardnessPlugin.instance;
-        if (plugin == null || plugin.getBlockHardnessConfig() == null) {
-            return BlockHardnessConfig.DEFAULT_MINIMUM_BREAK_SECONDS;
-        }
-        return plugin.getBlockHardnessConfig().getMinimumBreakSeconds();
+        return BlockHardnessConfig.current().getMinimumBreakSeconds();
     }
 
     private void calculateTimeBetweenEachIncrement(double secondsBlockShouldTakeToBreak) {

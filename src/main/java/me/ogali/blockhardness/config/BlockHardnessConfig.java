@@ -14,7 +14,9 @@ import java.util.Map;
 public class BlockHardnessConfig {
 
     public static final Map<String, Double> DEFAULT_TOOL_SPEEDS;
-    public static final boolean DEFAULT_APPLY_TOOL_SPEED = false;
+    public static final boolean DEFAULT_APPLY_TOOL_TIER = false;
+    public static final boolean DEFAULT_APPLY_ENCHANTMENTS = false;
+    public static final boolean DEFAULT_APPLY_POTION_EFFECTS = false;
     public static final double DEFAULT_MINIMUM_BREAK_SECONDS = 0.1;
 
     static {
@@ -29,24 +31,52 @@ public class BlockHardnessConfig {
         DEFAULT_TOOL_SPEEDS = Collections.unmodifiableMap(defaults);
     }
 
+    /**
+     * The config the rest of the plugin reads. Starts as the built-in defaults so the maths is usable — and
+     * testable — without a server, and is replaced when the plugin enables.
+     */
+    private static BlockHardnessConfig current = new BlockHardnessConfig();
+
     private final JavaPlugin plugin;
 
     private Map<String, Double> toolSpeeds = DEFAULT_TOOL_SPEEDS;
-    private boolean applyToolSpeedByDefault = DEFAULT_APPLY_TOOL_SPEED;
+    private boolean applyToolTierByDefault = DEFAULT_APPLY_TOOL_TIER;
+    private boolean applyEnchantmentsByDefault = DEFAULT_APPLY_ENCHANTMENTS;
+    private boolean applyPotionEffectsByDefault = DEFAULT_APPLY_POTION_EFFECTS;
     private double minimumBreakSeconds = DEFAULT_MINIMUM_BREAK_SECONDS;
+
+    private BlockHardnessConfig() {
+        this.plugin = null;
+    }
 
     public BlockHardnessConfig(JavaPlugin plugin) {
         this.plugin = plugin;
         reload();
+        current = this;
+    }
+
+    /** The live config, or the built-in defaults when no plugin has enabled. Never null. */
+    public static BlockHardnessConfig current() {
+        return current;
     }
 
     public void reload() {
+        if (plugin == null) return;
+
         plugin.saveDefaultConfig();
         plugin.reloadConfig();
 
         toolSpeeds = loadToolSpeeds(plugin.getConfig().getConfigurationSection("Tool-Speeds"));
-        applyToolSpeedByDefault = plugin.getConfig()
-                .getBoolean("Mining.apply-tool-speed-by-default", DEFAULT_APPLY_TOOL_SPEED);
+        // The single switch still works as the fallback for every source, so a config written against the
+        // original one-toggle design keeps behaving the same.
+        boolean applyToolSpeed = plugin.getConfig().getBoolean("Mining.apply-tool-speed-by-default", false);
+
+        applyToolTierByDefault = plugin.getConfig()
+                .getBoolean("Mining.Tool-Speed-Defaults.tool-tier", applyToolSpeed);
+        applyEnchantmentsByDefault = plugin.getConfig()
+                .getBoolean("Mining.Tool-Speed-Defaults.enchantments", applyToolSpeed);
+        applyPotionEffectsByDefault = plugin.getConfig()
+                .getBoolean("Mining.Tool-Speed-Defaults.potion-effects", applyToolSpeed);
         minimumBreakSeconds = plugin.getConfig()
                 .getDouble("Mining.minimum-break-seconds", DEFAULT_MINIMUM_BREAK_SECONDS);
 
@@ -63,8 +93,19 @@ public class BlockHardnessConfig {
         return toolSpeeds;
     }
 
-    public boolean isApplyToolSpeedByDefault() {
-        return applyToolSpeedByDefault;
+    /** Does a better tool break the block faster, when the caller doesn't say? */
+    public boolean isApplyToolTierByDefault() {
+        return applyToolTierByDefault;
+    }
+
+    /** Does Efficiency help, when the caller doesn't say? */
+    public boolean isApplyEnchantmentsByDefault() {
+        return applyEnchantmentsByDefault;
+    }
+
+    /** Do Haste and Conduit Power help, when the caller doesn't say? */
+    public boolean isApplyPotionEffectsByDefault() {
+        return applyPotionEffectsByDefault;
     }
 
     public double getMinimumBreakSeconds() {

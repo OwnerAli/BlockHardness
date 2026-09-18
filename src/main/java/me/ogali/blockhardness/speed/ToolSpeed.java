@@ -1,6 +1,5 @@
 package me.ogali.blockhardness.speed;
 
-import me.ogali.blockhardness.BlockHardnessPlugin;
 import me.ogali.blockhardness.config.BlockHardnessConfig;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -34,17 +33,32 @@ public final class ToolSpeed {
     }
 
     /**
-     * How much faster this player breaks the given block than with a bare hand.
+     * How much faster this player breaks the given block than with a bare hand, counting every source.
      *
      * @return 1.0 for a bare hand, a non-tool or the wrong tool; higher for a suitable tool.
      */
     public static double multiplierFor(Player player, Material blockMaterial) {
+        return multiplierFor(player, blockMaterial, SpeedOptions.all());
+    }
+
+    /**
+     * As {@link #multiplierFor(Player, Material)}, but counting only the sources the options ask for, so a block
+     * can ignore the tool tier while still rewarding Haste.
+     *
+     * @param speedOptions which sources apply; null means every one of them
+     */
+    public static double multiplierFor(Player player, Material blockMaterial, SpeedOptions speedOptions) {
         if (player == null || blockMaterial == null) return 1.0;
 
-        ItemStack heldItem = player.getInventory().getItemInMainHand();
-        double tierSpeed = tierSpeedFor(heldItem, blockMaterial);
+        SpeedOptions sources = speedOptions == null ? SpeedOptions.all() : speedOptions;
+        if (!sources.anyApplied()) return 1.0;
 
-        return compute(tierSpeed, efficiencyLevelOf(heldItem), hasteLevelOf(player));
+        ItemStack heldItem = player.getInventory().getItemInMainHand();
+        double tierSpeed = sources.applyToolTier() ? tierSpeedFor(heldItem, blockMaterial) : 1.0;
+        int efficiencyLevel = sources.applyEnchantments() ? efficiencyLevelOf(heldItem) : 0;
+        int hasteLevel = sources.applyPotionEffects() ? hasteLevelOf(player) : 0;
+
+        return compute(tierSpeed, efficiencyLevel, hasteLevel);
     }
 
     /**
@@ -172,11 +186,7 @@ public final class ToolSpeed {
     }
 
     private static Map<String, Double> toolSpeeds() {
-        BlockHardnessPlugin plugin = BlockHardnessPlugin.instance;
-        if (plugin == null || plugin.getBlockHardnessConfig() == null) {
-            return BlockHardnessConfig.DEFAULT_TOOL_SPEEDS;
-        }
-        return plugin.getBlockHardnessConfig().getToolSpeeds();
+        return BlockHardnessConfig.current().getToolSpeeds();
     }
 
 }

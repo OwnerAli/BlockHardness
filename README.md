@@ -21,23 +21,47 @@ breakPlayer.startMining(block, 5.0, new MiningOptions(true, false));
 
 // whatever this plugin's config says
 breakPlayer.startMining(block, 5.0, MiningOptions.defaults());
+
+// ignore the pickaxe, but let a Haste beacon help
+breakPlayer.startMining(block, 5.0, MiningOptions.builder()
+        .toolTier(false)
+        .potionEffects(true)
+        .build());
 ```
 
-`MiningOptions(boolean applyToolSpeed, boolean dropVanillaBlock)` keeps the **decision** with the consumer while the
-**numbers** live here: one drop may want "always exactly 5 seconds", another "5 seconds, faster with a better pick".
+`MiningOptions` keeps the **decision** with the consumer while the **numbers** live here: one drop may want
+"always exactly 5 seconds", another "5 seconds, faster with a better pick".
+
+Build it with `MiningOptions.builder()` and state only what you have an opinion about — anything left unset resolves
+from this plugin's config when `build()` is called, so options added in a later version cannot break your call site.
+The toggles:
+
+| Builder method | Meaning |
+|---|---|
+| `toolTier(boolean)` | does a better tool break the block faster? |
+| `enchantments(boolean)` | does Efficiency help? |
+| `potionEffects(boolean)` | do Haste and Conduit Power help? |
+| `toolSpeed(boolean)` | all three at once |
+| `speedOptions(SpeedOptions)` | a ready-made set, ignoring the toggles above |
+| `dropVanillaBlock(boolean)` | drop the block's vanilla drops when it breaks |
+
+The speed sources are independent on purpose: "a better pickaxe helps" and "Haste helps" are different questions for
+a custom block. `new MiningOptions(applyToolSpeed, dropVanillaBlock)` stays as shorthand for all-or-nothing, and
+passing `null` options is the same as `MiningOptions.defaults()`.
 
 The old `startMining(Block, double, boolean dropVanillaBlock)` still works and never applies tool speed.
 
-When `applyToolSpeed` is on:
+When any speed source is on:
 
 ```java
-seconds = Math.max(minimumBreakSeconds, seconds / ToolSpeed.multiplierFor(player, block.getType()));
+seconds = Math.max(minimumBreakSeconds, seconds / ToolSpeed.multiplierFor(player, block.getType(), speedOptions));
 ```
 
 ## Tool speed
 
 `ToolSpeed.multiplierFor(Player, Material)` is public, so a plugin can show the effective break time in a GUI without
-starting a dig. It returns 1.0 for a bare hand, a non-tool or the wrong tool, and follows
+starting a dig; the `(Player, Material, SpeedOptions)` overload counts only the sources you ask for. It returns 1.0
+for a bare hand, a non-tool or the wrong tool, and follows
 [vanilla](https://minecraft.wiki/w/Breaking):
 
 | Source | Value |
@@ -69,13 +93,17 @@ Tool-Speeds:
   GOLDEN_: 12.0
 
 Mining:
-  # Used when a caller passes MiningOptions.defaults()
-  apply-tool-speed-by-default: false
+  # Used for whatever a caller leaves unsaid
+  Tool-Speed-Defaults:
+    tool-tier: false
+    enchantments: false
+    potion-effects: false
   # Times never go below this; BreakPlayer treats it as an instant break
   minimum-break-seconds: 0.1
 ```
 
-The table above is also built in as defaults, so a missing or partial section still works. Reload at runtime with
+Both tables are also built in as defaults, so a missing or partial section still works. A single
+`Mining.apply-tool-speed-by-default` is still read as the fallback for all three sources. Reload at runtime with
 `BlockHardnessPlugin.instance.getBlockHardnessConfig().reload()`.
 
 ## Events

@@ -11,7 +11,15 @@ Tool-Speeds:
   GOLDEN_: 12.0
 
 Mining:
-  # Used when a caller passes MiningOptions.defaults() instead of saying either way.
-  apply-tool-speed-by-default: false
+  # Used for whatever a caller leaves unsaid. Each source is independent, so a block can ignore the tool
+  # entirely while still rewarding a Haste beacon.
+  Tool-Speed-Defaults:
+    # Does a better tool break the block faster?
+    tool-tier: false
+    # Does Efficiency help?
+    enchantments: false
+    # Do Haste and Conduit Power help?
+    potion-effects: false
+
   # Times never go below this; BreakPlayer treats it as an instant break.
   minimum-break-seconds: 0.1
