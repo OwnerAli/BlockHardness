@@ -1,5 +1,6 @@
 package me.ogali.blockhardness.config;
 
+import me.ogali.blockhardness.progress.ProgressLimits;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -12,12 +13,15 @@ import java.util.Map;
  * The built-in defaults mirror vanilla, so a missing or partial config still works.
  */
 public class BlockHardnessConfig {
-
     public static final Map<String, Double> DEFAULT_TOOL_SPEEDS;
     public static final boolean DEFAULT_APPLY_TOOL_TIER = false;
     public static final boolean DEFAULT_APPLY_ENCHANTMENTS = false;
     public static final boolean DEFAULT_APPLY_POTION_EFFECTS = false;
     public static final double DEFAULT_MINIMUM_BREAK_SECONDS = 0.1;
+    public static final boolean DEFAULT_SAVE_PROGRESS = false;
+    public static final double DEFAULT_DECAY_PER_SECOND = 0.1;
+    public static final double DEFAULT_FORGET_AFTER_SECONDS = 60;
+    public static final int DEFAULT_MAX_TRACKED_BLOCKS = 16;
 
     static {
         Map<String, Double> defaults = new LinkedHashMap<>();
@@ -44,6 +48,8 @@ public class BlockHardnessConfig {
     private boolean applyEnchantmentsByDefault = DEFAULT_APPLY_ENCHANTMENTS;
     private boolean applyPotionEffectsByDefault = DEFAULT_APPLY_POTION_EFFECTS;
     private double minimumBreakSeconds = DEFAULT_MINIMUM_BREAK_SECONDS;
+    private boolean saveProgressByDefault = DEFAULT_SAVE_PROGRESS;
+    private ProgressLimits progressLimits = ProgressLimits.defaults();
 
     private BlockHardnessConfig() {
         this.plugin = null;
@@ -83,6 +89,16 @@ public class BlockHardnessConfig {
         if (minimumBreakSeconds <= 0) {
             minimumBreakSeconds = DEFAULT_MINIMUM_BREAK_SECONDS;
         }
+
+        saveProgressByDefault = plugin.getConfig()
+                .getBoolean("Mining.Progress.save-by-default", DEFAULT_SAVE_PROGRESS);
+        progressLimits = new ProgressLimits(
+                Math.max(0, plugin.getConfig()
+                        .getDouble("Mining.Progress.decay-per-second", DEFAULT_DECAY_PER_SECOND)),
+                Math.max(0, plugin.getConfig()
+                        .getDouble("Mining.Progress.forget-after-seconds", DEFAULT_FORGET_AFTER_SECONDS)),
+                Math.max(0, plugin.getConfig()
+                        .getInt("Mining.Progress.max-tracked-blocks-per-player", DEFAULT_MAX_TRACKED_BLOCKS)));
     }
 
     /**
@@ -110,6 +126,16 @@ public class BlockHardnessConfig {
 
     public double getMinimumBreakSeconds() {
         return minimumBreakSeconds;
+    }
+
+    /** Is progress on a block remembered when the player mines something else, when the caller doesn't say? */
+    public boolean isSaveProgressByDefault() {
+        return saveProgressByDefault;
+    }
+
+    /** How fast remembered progress decays, and how much of it is kept. */
+    public ProgressLimits getProgressLimits() {
+        return progressLimits;
     }
 
     private Map<String, Double> loadToolSpeeds(ConfigurationSection section) {

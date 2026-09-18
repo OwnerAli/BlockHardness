@@ -23,3 +23,20 @@ Mining:
 
   # Times never go below this; BreakPlayer treats it as an instant break.
   minimum-break-seconds: 0.1
+
+  # Half-mined blocks. Nothing here survives a restart or a logout; it is all kept in memory.
+  Progress:
+    # Keep a block's progress when the player mines something else, so coming back resumes rather than
+    # starting over. Used when a caller doesn't say either way.
+    save-by-default: false
+
+    # Progress lost per second while a block is not being mined, as a fraction of the whole bar.
+    # 0.1 empties a full bar in ten seconds; 0 never decays.
+    decay-per-second: 0.1
+
+    # Forget a block entirely this long after it was last mined, however slowly it decays. 0 never forgets.
+    forget-after-seconds: 60
+
+    # How many blocks one player may hold progress on at once. The least recently mined is dropped first.
+    # 0 is unlimited, which is only safe if decay and forget-after are doing the tidying.
+    max-tracked-blocks-per-player: 16

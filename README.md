@@ -43,6 +43,7 @@ The toggles:
 | `potionEffects(boolean)` | do Haste and Conduit Power help? |
 | `toolSpeed(boolean)` | all three at once |
 | `speedOptions(SpeedOptions)` | a ready-made set, ignoring the toggles above |
+| `saveProgress(boolean)` | remember this block's progress when the player mines something else |
 | `dropVanillaBlock(boolean)` | drop the block's vanilla drops when it breaks |
 
 The speed sources are independent on purpose: "a better pickaxe helps" and "Haste helps" are different questions for
@@ -79,6 +80,41 @@ Tool speed only applies when the tool suits the block (`isPreferredTool`), so a 
 `Block#getBreakSpeed(player)` — plugins freeze that attribute to 0 while a custom block is being mined, so it reports
 "infinitely slow". The underwater and off-the-ground penalties are not applied.
 
+## Saved and decaying progress
+
+By default a player who looks away from a half-mined block starts over. With `saveProgress` on, the progress is kept
+per player per block, decays while they are away, and is picked up again when they come back:
+
+```java
+breakPlayer.startMining(block, 5.0, MiningOptions.builder().saveProgress(true).build());
+```
+
+Nothing is persisted: progress lives in the player's `BreakPlayer` and dies with their logout or a restart, which is
+also what keeps it bounded. Three config limits stop it growing in the meantime — decay, a forget deadline and a cap
+on tracked blocks per player, with the least recently mined block dropped first.
+
+Read and write it directly, without starting a dig:
+
+```java
+double progress = breakPlayer.getProgress(block);   // 0.0 to just under 1.0, decay already applied
+breakPlayer.setProgress(block, 0.5);                // half-mined; 1.0 does NOT break the block
+breakPlayer.clearProgress(block);
+
+MiningProgressStore store = breakPlayer.getProgressStore();
+store.trackedBlocks();
+store.clear();
+```
+
+`getProgress` returns the live value for the block being mined and the remembered one for anything else, so a GUI
+can show a bar either way. A block that finishes breaking always forgets its progress, whatever the options said.
+
+`MiningProgressStore` can also be used on its own — it is keyed by `BlockKey` (a world id and three ints, so it holds
+no `Block`), takes a `ProgressLimits` and an injectable clock:
+
+```java
+MiningProgressStore store = new MiningProgressStore(ProgressLimits.noDecay(16));
+```
+
 ## Config
 
 ```yaml
@@ -100,6 +136,16 @@ Mining:
     potion-effects: false
   # Times never go below this; BreakPlayer treats it as an instant break
   minimum-break-seconds: 0.1
+
+  Progress:
+    # Remember a block's progress when the player mines something else
+    save-by-default: false
+    # Fraction of the bar lost per second while away; 0 never decays
+    decay-per-second: 0.1
+    # Forget a block this long after it was last mined; 0 never forgets
+    forget-after-seconds: 60
+    # Blocks one player may hold progress on; least recently mined dropped first. 0 is unlimited
+    max-tracked-blocks-per-player: 16
 ```
 
 Both tables are also built in as defaults, so a missing or partial section still works. A single

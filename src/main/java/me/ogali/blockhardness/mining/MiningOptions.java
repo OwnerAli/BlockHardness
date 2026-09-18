@@ -1,5 +1,6 @@
 package me.ogali.blockhardness.mining;
 
+import me.ogali.blockhardness.config.BlockHardnessConfig;
 import me.ogali.blockhardness.speed.SpeedOptions;
 
 import java.util.Objects;
@@ -16,10 +17,12 @@ public final class MiningOptions {
 
     private final SpeedOptions speedOptions;
     private final boolean dropVanillaBlock;
+    private final boolean saveProgress;
 
-    private MiningOptions(SpeedOptions speedOptions, boolean dropVanillaBlock) {
+    private MiningOptions(SpeedOptions speedOptions, boolean dropVanillaBlock, boolean saveProgress) {
         this.speedOptions = speedOptions;
         this.dropVanillaBlock = dropVanillaBlock;
+        this.saveProgress = saveProgress;
     }
 
     /**
@@ -29,7 +32,8 @@ public final class MiningOptions {
      * @param dropVanillaBlock drop the block's vanilla drops when it breaks
      */
     public MiningOptions(boolean applyToolSpeed, boolean dropVanillaBlock) {
-        this(applyToolSpeed ? SpeedOptions.all() : SpeedOptions.none(), dropVanillaBlock);
+        this(applyToolSpeed ? SpeedOptions.all() : SpeedOptions.none(), dropVanillaBlock,
+                BlockHardnessConfig.current().isSaveProgressByDefault());
     }
 
     public static Builder builder() {
@@ -51,6 +55,14 @@ public final class MiningOptions {
         return dropVanillaBlock;
     }
 
+    /**
+     * Keep this block's progress when the player mines something else, so coming back resumes where they left
+     * off rather than starting over. Progress decays and is forgotten per the config's limits.
+     */
+    public boolean saveProgress() {
+        return saveProgress;
+    }
+
     /** True when at least one speed source is on. */
     public boolean appliesToolSpeed() {
         return speedOptions.anyApplied();
@@ -61,17 +73,20 @@ public final class MiningOptions {
         if (this == other) return true;
         if (!(other instanceof MiningOptions miningOptions)) return false;
         return dropVanillaBlock == miningOptions.dropVanillaBlock
+                && saveProgress == miningOptions.saveProgress
                 && speedOptions.equals(miningOptions.speedOptions);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(speedOptions, dropVanillaBlock);
+        return Objects.hash(speedOptions, dropVanillaBlock, saveProgress);
     }
 
     @Override
     public String toString() {
-        return "MiningOptions[" + speedOptions + ", dropVanillaBlock=" + dropVanillaBlock + "]";
+        return "MiningOptions[" + speedOptions
+                + ", dropVanillaBlock=" + dropVanillaBlock
+                + ", saveProgress=" + saveProgress + "]";
     }
 
     public static final class Builder {
@@ -79,6 +94,7 @@ public final class MiningOptions {
         private final SpeedOptions.Builder speedOptionsBuilder = SpeedOptions.builder();
         private SpeedOptions speedOptions;
         private Boolean dropVanillaBlock;
+        private Boolean saveProgress;
 
         private Builder() {
         }
@@ -118,10 +134,19 @@ public final class MiningOptions {
             return this;
         }
 
+        /** Remember this block's progress when the player mines something else. */
+        public Builder saveProgress(boolean saveProgress) {
+            this.saveProgress = saveProgress;
+            return this;
+        }
+
         public MiningOptions build() {
             return new MiningOptions(
                     speedOptions == null ? speedOptionsBuilder.build() : speedOptions,
-                    dropVanillaBlock != null && dropVanillaBlock);
+                    dropVanillaBlock != null && dropVanillaBlock,
+                    saveProgress == null
+                            ? BlockHardnessConfig.current().isSaveProgressByDefault()
+                            : saveProgress);
         }
 
     }
