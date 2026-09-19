@@ -37,6 +37,14 @@ Mining:
     # Forget a block entirely this long after it was last mined, however slowly it decays. 0 never forgets.
     forget-after-seconds: 60
 
+    # Leave the cracks on blocks with saved progress, so a player can see what they half-mined.
+    # Each block gets its own animation id, so several can be cracked at once.
+    show-saved-cracks: true
+
+    # How often those cracks are re-sent, in ticks. The client forgets block damage it has not heard about
+    # for a while, and this is also what makes decay visible as it happens. Lower is smoother and chattier.
+    crack-refresh-ticks: 100
+
     # How many blocks one player may hold progress on at once. The least recently mined is dropped first.
     # 0 is unlimited, which is only safe if decay and forget-after are doing the tidying.
     max-tracked-blocks-per-player: 16

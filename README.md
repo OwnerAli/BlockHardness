@@ -105,6 +105,10 @@ store.trackedBlocks();
 store.clear();
 ```
 
+Blocks with saved progress keep their cracks on screen, so a player can see what they half-mined and watch it decay.
+Each block is sent under its own animation id, so several can be cracked at once, and a timer re-sends them because
+the client forgets block damage it has not heard about for a while. Turn it off with `show-saved-cracks`.
+
 `getProgress` returns the live value for the block being mined and the remembered one for anything else, so a GUI
 can show a bar either way. A block that finishes breaking always forgets its progress, whatever the options said.
 
@@ -144,6 +148,9 @@ Mining:
     decay-per-second: 0.1
     # Forget a block this long after it was last mined; 0 never forgets
     forget-after-seconds: 60
+    # Leave cracks on blocks with saved progress, and how often to re-send them
+    show-saved-cracks: true
+    crack-refresh-ticks: 100
     # Blocks one player may hold progress on; least recently mined dropped first. 0 is unlimited
     max-tracked-blocks-per-player: 16
 ```

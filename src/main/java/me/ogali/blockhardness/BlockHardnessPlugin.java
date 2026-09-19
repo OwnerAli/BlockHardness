@@ -11,6 +11,7 @@ import me.ogali.blockhardness.listeners.PlayerJoinListener;
 import me.ogali.blockhardness.listeners.PlayerQuitListener;
 import me.ogali.blockhardness.listeners.PlayerSwingListener;
 import me.ogali.blockhardness.player.BreakPlayerRegistry;
+import me.ogali.blockhardness.player.domain.BreakPlayer;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -25,6 +26,7 @@ public final class BlockHardnessPlugin extends JavaPlugin {
         blockHardnessConfig = new BlockHardnessConfig(this);
         breakPlayerRegistry = new BreakPlayerRegistry();
         registerListeners();
+        startCrackRefreshTask();
     }
 
     @Override
@@ -37,6 +39,19 @@ public final class BlockHardnessPlugin extends JavaPlugin {
 
     public BlockHardnessConfig getBlockHardnessConfig() {
         return blockHardnessConfig;
+    }
+
+    /**
+     * Keeps the cracks on blocks with saved progress alive. The client forgets block damage it has not been told
+     * about for a while, and decay has to be seen as it happens, not only when the player comes back.
+     */
+    private void startCrackRefreshTask() {
+        int refreshTicks = blockHardnessConfig.getCrackRefreshTicks();
+        getServer().getScheduler().runTaskTimer(this, () -> {
+            for (BreakPlayer breakPlayer : breakPlayerRegistry.getBreakPlayers()) {
+                breakPlayer.refreshSavedCracks();
+            }
+        }, refreshTicks, refreshTicks);
     }
 
     private void registerListeners() {

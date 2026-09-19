@@ -18,4 +18,16 @@ public record BlockKey(UUID worldId, int x, int y, int z) {
         return new BlockKey(block.getWorld().getUID(), block.getX(), block.getY(), block.getZ());
     }
 
+    /**
+     * The id the crack animation is sent under. The client keys block damage by the id in the packet, so every
+     * block needs its own: send them all under one id and only the newest block shows a crack.
+     * <p>
+     * Negative, to stay clear of the positive ids the server hands out to real entities, and derived from the
+     * position so the same block always reuses its id and can be cleared later.
+     */
+    public int animationId() {
+        int hash = (31 * (31 * x + y) + z) ^ worldId.hashCode();
+        return hash == Integer.MIN_VALUE ? -1 : -Math.abs(hash);
+    }
+
 }

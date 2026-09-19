@@ -8,20 +8,32 @@ import com.comphenix.protocol.wrappers.BlockPosition;
 import me.ogali.blockhardness.config.BlockHardnessConfig;
 import me.ogali.blockhardness.events.CustomHardnessBlockBreakEvent;
 import me.ogali.blockhardness.mining.MiningOptions;
+import me.ogali.blockhardness.progress.BlockKey;
 import me.ogali.blockhardness.progress.MiningProgressStore;
 import me.ogali.blockhardness.speed.ToolSpeed;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
+
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class BreakPlayer {
 
     /** The crack animation has ten stages; progress is tracked as a fraction so it can be saved and decayed. */
     private static final int BREAK_STAGES = 10;
 
+    /** Cracks further away than this are not worth a packet; the client will not have the chunk in view. */
+    private static final int CRACK_VISIBLE_RADIUS = 64;
+
     private final Player player;
     private final MiningProgressStore progressStore = new MiningProgressStore();
+
+    /** Blocks this player is currently being shown a crack on, so they can be cleared again exactly once. */
+    private final Set<BlockKey> shownCracks = ConcurrentHashMap.newKeySet();
 
     private Block currentBlockBeingBroken;
     private double currentProgress;
@@ -62,18 +74,24 @@ public class BreakPlayer {
         double clamped = Math.max(0, Math.min(1.0, progress));
         if (block.equals(currentBlockBeingBroken)) {
             currentProgress = clamped;
-            sendBreakAnimation(stageOf(clamped));
+            showCrack(BlockKey.of(block), stageOf(clamped));
             return;
         }
+
         progressStore.setProgress(block, clamped);
+        if (showSavedCracks()) {
+            showCrack(BlockKey.of(block), stageOf(clamped));
+        }
     }
 
-    /** Forgets a block's progress, resetting the animation if it is the one being mined. */
+    /** Forgets a block's progress and takes its crack off the player's screen. */
     public void clearProgress(Block block) {
         progressStore.remove(block);
         if (block.equals(currentBlockBeingBroken)) {
-            stopMiningAndResetAnimation();
+            currentBlockBeingBroken = null;
+            currentProgress = 0;
         }
+        hideCrack(BlockKey.of(block));
     }
 
     /**
@@ -112,16 +130,45 @@ public class BreakPlayer {
             breakBlock(miningOptions.dropVanillaBlock());
             return;
         }
-        sendBreakAnimation(stageOf(currentProgress));
+        showCrack(BlockKey.of(block), stageOf(currentProgress));
     }
 
     /**
-     * Stops the current dig, keeping the progress if the last call asked for it - this is what runs when the
-     * player releases the button, so it is the usual way progress gets remembered.
+     * Stops the current dig. The progress is kept if the last call asked for it, and so is the crack - this runs
+     * when the player releases the button, which is exactly when a saved block should stay visibly damaged.
      */
     public void stopMiningAndResetAnimation() {
-        resetBreakAnimation();
-        stopMining();
+        setAsideCurrentProgress(currentOptions);
+        currentBlockBeingBroken = null;
+        currentProgress = 0;
+    }
+
+    /**
+     * Re-sends the cracks for blocks this player has saved progress on, and clears the ones whose progress has
+     * decayed away. Called on a timer by the plugin: the client drops block damage it has not heard about for a
+     * while, and decay has to be shown as it happens rather than only when the player returns.
+     */
+    public void refreshSavedCracks() {
+        if (!showSavedCracks()) {
+            clearAllCracksExceptCurrent();
+            return;
+        }
+
+        Set<BlockKey> blockKeys = new HashSet<>(progressStore.trackedBlocks());
+        blockKeys.addAll(shownCracks);
+
+        for (BlockKey blockKey : blockKeys) {
+            if (isCurrentBlock(blockKey)) continue;
+
+            double progress = progressStore.getProgress(blockKey);
+            if (progress <= 0) {
+                hideCrack(blockKey);
+                continue;
+            }
+            if (isWithinRange(blockKey)) {
+                showCrack(blockKey, stageOf(progress));
+            }
+        }
     }
 
     /**
@@ -141,15 +188,26 @@ public class BreakPlayer {
         }
     }
 
+    /**
+     * Saves the current block's progress, leaving its crack on screen so the player can see what they half-mined.
+     * Without saving, both the progress and the crack go.
+     */
     private void setAsideCurrentProgress(MiningOptions options) {
         if (currentBlockBeingBroken == null) return;
 
+        BlockKey blockKey = BlockKey.of(currentBlockBeingBroken);
         if (options.saveProgress() && currentProgress > 0) {
-            progressStore.setProgress(currentBlockBeingBroken, currentProgress);
-        } else {
-            progressStore.remove(currentBlockBeingBroken);
+            progressStore.setProgress(blockKey, currentProgress);
+            if (showSavedCracks()) {
+                showCrack(blockKey, stageOf(currentProgress));
+            } else {
+                hideCrack(blockKey);
+            }
+            return;
         }
-        resetBreakAnimation();
+
+        progressStore.remove(blockKey);
+        hideCrack(blockKey);
     }
 
     /**
@@ -163,23 +221,20 @@ public class BreakPlayer {
         return Math.min(elapsed, millisToBreak / BREAK_STAGES) / millisToBreak;
     }
 
-    private void stopMining() {
-        setAsideCurrentProgress(currentOptions);
-        currentBlockBeingBroken = null;
-        currentProgress = 0;
-    }
-
     private void breakBlock(boolean dropVanillaBlock) {
-        resetBreakAnimation();
-        Bukkit.getPluginManager().callEvent(new CustomHardnessBlockBreakEvent(currentBlockBeingBroken, player));
-        player.playSound(player, currentBlockBeingBroken.getBlockData().getSoundGroup().getBreakSound(), 1, 1);
+        Block block = currentBlockBeingBroken;
+        BlockKey blockKey = BlockKey.of(block);
+
+        hideCrack(blockKey);
+        Bukkit.getPluginManager().callEvent(new CustomHardnessBlockBreakEvent(block, player));
+        player.playSound(player, block.getBlockData().getSoundGroup().getBreakSound(), 1, 1);
 
         // A broken block keeps no progress, however the options were set.
-        progressStore.remove(currentBlockBeingBroken);
-        currentBlockBeingBroken.setType(Material.AIR);
+        progressStore.remove(blockKey);
+        block.setType(Material.AIR);
 
         if (dropVanillaBlock) {
-            currentBlockBeingBroken.breakNaturally(player.getItemInUse());
+            block.breakNaturally(player.getItemInUse());
         }
 
         currentBlockBeingBroken = null;
@@ -197,17 +252,54 @@ public class BreakPlayer {
         return BlockHardnessConfig.current().getMinimumBreakSeconds();
     }
 
+    private boolean showSavedCracks() {
+        return BlockHardnessConfig.current().isShowSavedCracks();
+    }
+
+    private boolean isCurrentBlock(BlockKey blockKey) {
+        return currentBlockBeingBroken != null && blockKey.equals(BlockKey.of(currentBlockBeingBroken));
+    }
+
+    private boolean isWithinRange(BlockKey blockKey) {
+        if (!player.getWorld().getUID().equals(blockKey.worldId())) return false;
+
+        double dx = player.getLocation().getX() - blockKey.x();
+        double dy = player.getLocation().getY() - blockKey.y();
+        double dz = player.getLocation().getZ() - blockKey.z();
+
+        return (dx * dx) + (dy * dy) + (dz * dz) <= CRACK_VISIBLE_RADIUS * CRACK_VISIBLE_RADIUS;
+    }
+
+    private void clearAllCracksExceptCurrent() {
+        for (BlockKey blockKey : new HashSet<>(shownCracks)) {
+            if (isCurrentBlock(blockKey)) continue;
+            hideCrack(blockKey);
+        }
+    }
+
     private static int stageOf(double progress) {
         return Math.max(0, Math.min(BREAK_STAGES - 1, (int) (progress * BREAK_STAGES)));
     }
 
-    private void sendBreakAnimation(int stage) {
-        if (currentBlockBeingBroken == null) return;
+    private void showCrack(BlockKey blockKey, int stage) {
+        shownCracks.add(blockKey);
+        sendBreakAnimation(blockKey, stage);
+    }
+
+    private void hideCrack(BlockKey blockKey) {
+        shownCracks.remove(blockKey);
+        sendBreakAnimation(blockKey, -1);
+    }
+
+    private void sendBreakAnimation(BlockKey blockKey, int stage) {
+        World world = Bukkit.getWorld(blockKey.worldId());
+        if (world == null) return;
+
         ProtocolManager protocolManager = ProtocolLibrary.getProtocolManager();
         PacketContainer blockBreakPacket = protocolManager.createPacket(PacketType.Play.Server.BLOCK_BREAK_ANIMATION);
-        blockBreakPacket.getIntegers().write(0, 0);
-        blockBreakPacket.getBlockPositionModifier().write(0, new BlockPosition(currentBlockBeingBroken.getX(), currentBlockBeingBroken.getY(),
-                currentBlockBeingBroken.getZ()));
+        blockBreakPacket.getIntegers().write(0, blockKey.animationId());
+        blockBreakPacket.getBlockPositionModifier().write(0,
+                new BlockPosition(blockKey.x(), blockKey.y(), blockKey.z()));
         blockBreakPacket.getIntegers().write(1, stage);
 
         try {
@@ -215,10 +307,6 @@ public class BreakPlayer {
         } catch (Exception ignored) {
             Bukkit.getConsoleSender().sendMessage("ERROR IN PACKET!");
         }
-    }
-
-    private void resetBreakAnimation() {
-        sendBreakAnimation(-1);
     }
 
 }

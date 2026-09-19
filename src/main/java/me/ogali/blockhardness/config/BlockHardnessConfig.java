@@ -22,6 +22,8 @@ public class BlockHardnessConfig {
     public static final double DEFAULT_DECAY_PER_SECOND = 0.1;
     public static final double DEFAULT_FORGET_AFTER_SECONDS = 60;
     public static final int DEFAULT_MAX_TRACKED_BLOCKS = 16;
+    public static final boolean DEFAULT_SHOW_SAVED_CRACKS = true;
+    public static final int DEFAULT_CRACK_REFRESH_TICKS = 100;
 
     static {
         Map<String, Double> defaults = new LinkedHashMap<>();
@@ -50,6 +52,8 @@ public class BlockHardnessConfig {
     private double minimumBreakSeconds = DEFAULT_MINIMUM_BREAK_SECONDS;
     private boolean saveProgressByDefault = DEFAULT_SAVE_PROGRESS;
     private ProgressLimits progressLimits = ProgressLimits.defaults();
+    private boolean showSavedCracks = DEFAULT_SHOW_SAVED_CRACKS;
+    private int crackRefreshTicks = DEFAULT_CRACK_REFRESH_TICKS;
 
     private BlockHardnessConfig() {
         this.plugin = null;
@@ -99,6 +103,11 @@ public class BlockHardnessConfig {
                         .getDouble("Mining.Progress.forget-after-seconds", DEFAULT_FORGET_AFTER_SECONDS)),
                 Math.max(0, plugin.getConfig()
                         .getInt("Mining.Progress.max-tracked-blocks-per-player", DEFAULT_MAX_TRACKED_BLOCKS)));
+
+        showSavedCracks = plugin.getConfig()
+                .getBoolean("Mining.Progress.show-saved-cracks", DEFAULT_SHOW_SAVED_CRACKS);
+        crackRefreshTicks = Math.max(1, plugin.getConfig()
+                .getInt("Mining.Progress.crack-refresh-ticks", DEFAULT_CRACK_REFRESH_TICKS));
     }
 
     /**
@@ -131,6 +140,16 @@ public class BlockHardnessConfig {
     /** Is progress on a block remembered when the player mines something else, when the caller doesn't say? */
     public boolean isSaveProgressByDefault() {
         return saveProgressByDefault;
+    }
+
+    /** Do blocks with saved progress keep their cracks while the player is not mining them? */
+    public boolean isShowSavedCracks() {
+        return showSavedCracks;
+    }
+
+    /** How often saved cracks are re-sent, in ticks. */
+    public int getCrackRefreshTicks() {
+        return crackRefreshTicks;
     }
 
     /** How fast remembered progress decays, and how much of it is kept. */
