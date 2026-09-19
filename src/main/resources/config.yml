@@ -1,0 +1,42 @@
+# How fast each tool mines a custom-hardness block, relative to a bare hand.
+# Matched against the start of the item's name, so tools from other plugins can be given a speed.
+# Anything unmatched (and the wrong tool for a block) stays at 1.0.
+Tool-Speeds:
+  WOODEN_: 2.0
+  STONE_: 4.0
+  COPPER_: 5.0
+  IRON_: 6.0
+  DIAMOND_: 8.0
+  NETHERITE_: 9.0
+  GOLDEN_: 12.0
+
+Mining:
+  # Used for whatever a caller leaves unsaid. Each source is independent, so a block can ignore the tool
+  # entirely while still rewarding a Haste beacon.
+  Tool-Speed-Defaults:
+    # Does a better tool break the block faster?
+    tool-tier: false
+    # Does Efficiency help?
+    enchantments: false
+    # Do Haste and Conduit Power help?
+    potion-effects: false
+
+  # Times never go below this; BreakPlayer treats it as an instant break.
+  minimum-break-seconds: 0.1
+
+  # Half-mined blocks. Nothing here survives a restart or a logout; it is all kept in memory.
+  Progress:
+    # Keep a block's progress when the player mines something else, so coming back resumes rather than
+    # starting over. Used when a caller doesn't say either way.
+    save-by-default: false
+
+    # Progress lost per second while a block is not being mined, as a fraction of the whole bar.
+    # 0.1 empties a full bar in ten seconds; 0 never decays.
+    decay-per-second: 0.1
+
+    # Forget a block entirely this long after it was last mined, however slowly it decays. 0 never forgets.
+    forget-after-seconds: 60
+
+    # How many blocks one player may hold progress on at once. The least recently mined is dropped first.
+    # 0 is unlimited, which is only safe if decay and forget-after are doing the tidying.
+    max-tracked-blocks-per-player: 16

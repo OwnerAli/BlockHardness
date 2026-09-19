@@ -1,2 +1,9 @@
-# Project exclude paths
+# Build output
+/build/
 /target/
+!gradle/wrapper/gradle-wrapper.jar
+.gradle/
+
+# IDE
+/.idea/
+*.iml
